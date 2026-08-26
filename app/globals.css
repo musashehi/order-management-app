@@ -55,8 +55,6 @@ a {
   background: #dbeafe;
 }
 
-/* Cards */
-
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -65,8 +63,6 @@ a {
     0 1px 2px rgba(15, 23, 42, 0.03),
     0 8px 24px rgba(15, 23, 42, 0.04);
 }
-
-/* Buttons */
 
 .btn {
   display: inline-flex;
@@ -128,8 +124,6 @@ a {
   background: #fee2e2;
 }
 
-/* Inputs */
-
 .input {
   width: 100%;
   min-height: 44px;
@@ -161,8 +155,6 @@ textarea.input {
   resize: vertical;
 }
 
-/* Status badges */
-
 .status {
   display: inline-flex;
   align-items: center;
@@ -182,12 +174,6 @@ textarea.input {
   border: 1px solid #fde68a;
 }
 
-.status-Preparing {
-  background: #eff6ff;
-  color: #2563eb;
-  border: 1px solid #bfdbfe;
-}
-
 .status-Ready {
   background: #ecfdf5;
   color: #15803d;
@@ -199,8 +185,6 @@ textarea.input {
   color: #64748b;
   border: 1px solid #e2e8f0;
 }
-
-/* Scrollbar */
 
 ::-webkit-scrollbar {
   width: 9px;
@@ -219,8 +203,6 @@ textarea.input {
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
-
-/* Mobile */
 
 @media (max-width: 767px) {
   .btn {
