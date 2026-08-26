@@ -94,10 +94,17 @@ export default function AppSidebar() {
             ACCOUNT
           </div>
 
-          <div className="flex items-center gap-3 px-3 py-3 text-sm text-slate-500">
+          <Link
+            href={"/settings" as Route}
+            className={`flex items-center gap-3 px-3 py-3 rounded-xl text-sm transition ${
+              pathname === "/settings"
+                ? "bg-blue-50 text-blue-700 font-bold"
+                : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+            }`}
+          >
             <Settings size={18} />
-            Settings
-          </div>
+            <span>Settings</span>
+          </Link>
         </div>
       </div>
     </aside>
