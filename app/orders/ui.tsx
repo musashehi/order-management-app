@@ -1,9 +1,13 @@
 "use client";
 
 import { useMemo, useState } from "react";
+
 import { createClient } from "@/lib/supabase-browser";
-import type { Order, OrderStatus } from "@/lib/types";\nimport { localDateString, getDeliveryLabel } from "@/lib/date";
+import type { Order, OrderStatus } from "@/lib/types";
+import { localDateString, getDeliveryLabel } from "@/lib/date";
+
 import AppSidebar from "@/app/components/AppSidebar";
+
 import {
   Plus,
   Search,
@@ -37,19 +41,31 @@ export default function OrdersPageClient({
   const [toast, setToast] = useState("");
 
   const supabase = createClient();
+  const today = localDateString();
 
   const filtered = useMemo(() => {
     return orders.filter((o) => {
       const text =
         `${o.customer_name} ${o.customer_phone} ${o.product_description}`.toLowerCase();
 
-      if (q && !text.includes(q.toLowerCase())) return false;
+      if (q && !text.includes(q.toLowerCase())) {
+        return false;
+      }
 
-      if (filter === "Late") {\n        if (o.status === "Delivered" || o.delivery_date >= today) return false;\n      } else if (filter !== "All" && o.status !== filter) {\n        return false;\n      }
+      if (filter === "Late") {
+        if (
+          o.status === "Delivered" ||
+          o.delivery_date >= today
+        ) {
+          return false;
+        }
+      } else if (filter !== "All" && o.status !== filter) {
+        return false;
+      }
 
       return true;
     });
-  }, [orders, q, filter]);
+  }, [orders, q, filter, today]);
 
   async function saveOrder(data: Partial<Order>) {
     const payload = {
@@ -109,7 +125,9 @@ export default function OrdersPageClient({
   }
 
   async function deleteOrder(id: string) {
-    if (!confirm("Are you sure you want to delete this order?")) return;
+    if (!confirm("Are you sure you want to delete this order?")) {
+      return;
+    }
 
     const { error } = await supabase
       .from("orders")
@@ -208,10 +226,12 @@ export default function OrdersPageClient({
                 <option>All</option>
 
                 {statuses.map((status) => (
-                  <option key={status}>
+                  <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
+
+                <option value="Late">Late</option>
               </select>
             </div>
           </section>
@@ -231,93 +251,122 @@ export default function OrdersPageClient({
 
             {filtered.length > 0 ? (
               <div className="divide-y divide-slate-100">
-                {filtered.map((order) => (
-                  <div
-                    key={order.id}
-                    className=`p-5 sm:p-6 flex flex-col xl:flex-row xl:items-center gap-4 ${order.status !== "Delivered" && order.delivery_date < today ? "bg-red-50/70 border-l-4 border-red-500" : ""}`
-                  >
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap gap-2 items-center">
-                        <h3 className="font-black text-lg">
-                          {order.customer_name}
-                        </h3>
+                {filtered.map((order) => {
+                  const isLate =
+                    order.status !== "Delivered" &&
+                    order.delivery_date < today;
 
-                        <span
-                          className={`status status-${order.status}`}
+                  return (
+                    <div
+                      key={order.id}
+                      className={`p-5 sm:p-6 flex flex-col xl:flex-row xl:items-center gap-4 ${
+                        isLate
+                          ? "bg-red-50/70 border-l-4 border-red-500"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <h3 className="font-black text-lg">
+                            {order.customer_name}
+                          </h3>
+
+                          <span
+                            className={`status status-${order.status}`}
+                          >
+                            {order.status}
+                          </span>
+
+                          {isLate && (
+                            <span className="text-xs font-black uppercase tracking-wide text-red-600 bg-red-100 px-2.5 py-1 rounded-full">
+                              Late
+                            </span>
+                          )}
+                        </div>
+
+                        <p className="text-sm text-slate-600 mt-3">
+                          {order.product_description}
+                        </p>
+
+                        <a
+                          href={`tel:${order.customer_phone}`}
+                          className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 mt-3"
                         >
-                          {order.status}
-                        </span>
+                          <Phone size={14} />
+                          {order.customer_phone}
+                        </a>
                       </div>
 
-                      <p className="text-sm text-slate-600 mt-3">
-                        {order.product_description}
-                      </p>
+                      <div className="xl:w-44">
+                        <div className="text-xs font-black uppercase tracking-wide text-slate-400">
+                          Delivery
+                        </div>
 
-                      <a
-                        href={`tel:${order.customer_phone}`}
-                        className="inline-flex items-center gap-2 text-sm font-bold text-blue-600 mt-3"
-                      >
-                        <Phone size={14} />
-                        {order.customer_phone}
-                      </a>
-                    </div>
+                        <div className="flex items-center gap-2 mt-1 font-bold">
+                          <CalendarDays size={15} />
+                          {order.delivery_date}
+                        </div>
 
-                    <div className="xl:w-40">
-                      <div className="text-xs font-black uppercase tracking-wide text-slate-400">
-                        Delivery
+                        <div
+                          className={`text-sm mt-1 font-bold ${
+                            isLate
+                              ? "text-red-600"
+                              : "text-slate-500"
+                          }`}
+                        >
+                          {getDeliveryLabel(
+                            order.delivery_date,
+                            today
+                          )}
+                        </div>
                       </div>
 
-                      <div className="flex items-center gap-2 mt-1 font-bold">
-                        <CalendarDays size={15} />
-                        {order.delivery_date}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        className="btn btn-secondary"
-                        onClick={() => setEditing(order)}
-                      >
-                        <Pencil size={15} />
-                        Edit
-                      </button>
-
-                      {order.status === "Pending" && (
+                      <div className="flex flex-wrap gap-2">
                         <button
-                          className="btn bg-blue-50 text-blue-700 hover:bg-blue-100"
+                          className="btn btn-secondary"
+                          onClick={() => setEditing(order)}
+                        >
+                          <Pencil size={15} />
+                          Edit
+                        </button>
+
+                        {order.status === "Pending" && (
+                          <button
+                            className="btn bg-blue-50 text-blue-700 hover:bg-blue-100"
+                            onClick={() =>
+                              updateStatus(order, "Ready")
+                            }
+                          >
+                            <PackageCheck size={15} />
+                            Mark Ready
+                          </button>
+                        )}
+
+                        {order.status === "Ready" && (
+                          <button
+                            className="btn bg-green-50 text-green-700 hover:bg-green-100"
+                            onClick={() =>
+                              updateStatus(order, "Delivered")
+                            }
+                          >
+                            <CheckCircle2 size={15} />
+                            Mark Delivered
+                          </button>
+                        )}
+
+                        <button
+                          className="btn btn-danger"
                           onClick={() =>
-                            updateStatus(order, "Ready")
+                            deleteOrder(order.id)
                           }
                         >
-                          <PackageCheck size={15} />
-                          Mark Ready
+                          <Trash2 size={15} />
+                          Delete
                         </button>
-                      )}
-
-                      {order.status === "Ready" && (
-                        <button
-                          className="btn bg-green-50 text-green-700 hover:bg-green-100"
-                          onClick={() =>
-                            updateStatus(order, "Delivered")
-                          }
-                        >
-                          <CheckCircle2 size={15} />
-                          Mark Delivered
-                        </button>
-                      )}
-
-                      <button
-                        className="btn btn-danger"
-                        onClick={() =>
-                          deleteOrder(order.id)
-                        }
-                      >
-                        <Trash2 size={15} />
-                        Delete
-                      </button>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className="p-12 text-center">
@@ -366,10 +415,9 @@ function OrderModal({
   onClose: () => void;
   onSave: (data: Partial<Order>) => void;
 }) {
-  const [form, setForm] =
-    useState<Partial<Order>>(
-      order || { status: "Pending" }
-    );
+  const [form, setForm] = useState<Partial<Order>>(
+    order || { status: "Pending" }
+  );
 
   const set = (key: keyof Order, value: any) =>
     setForm((prev) => ({
@@ -383,9 +431,7 @@ function OrderModal({
         <div className="px-5 sm:px-6 py-5 border-b border-slate-100 flex items-center">
           <div>
             <h2 className="text-xl font-black">
-              {order
-                ? "Edit Order"
-                : "Add New Order"}
+              {order ? "Edit Order" : "Add New Order"}
             </h2>
 
             <p className="text-sm text-slate-500 mt-1">
@@ -456,7 +502,7 @@ function OrderModal({
                 }
               >
                 {statuses.map((status) => (
-                  <option key={status}>
+                  <option key={status} value={status}>
                     {status}
                   </option>
                 ))}
@@ -476,9 +522,7 @@ function OrderModal({
               className="btn btn-primary flex-1"
               onClick={() => onSave(form)}
             >
-              {order
-                ? "Save Changes"
-                : "Save Order"}
+              {order ? "Save Changes" : "Save Order"}
             </button>
           </div>
         </div>
