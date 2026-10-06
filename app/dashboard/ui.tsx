@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
-import { localDateString, addDaysString } from "@/lib/date";
+import { localDateString, addDaysString, getDeliveryLabel } from "@/lib/date";
 import type { Order, Notification, OrderStatus } from "@/lib/types";
 import {
   Plus,
@@ -241,7 +241,7 @@ export default function Dashboard({
         </header>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-          <section className="grid grid-cols-2 xl:grid-cols-4 gap-4">
+          <section className="grid grid-cols-2 xl:grid-cols-5 gap-4">
             <StatCard
               title="Today"
               value={todayOrders.length}
@@ -275,7 +275,7 @@ export default function Dashboard({
             />
           </section>
 
-          <section className="grid xl:grid-cols-2 gap-6">
+          <section className="grid xl:grid-cols-2 gap-6">\n            <OrderSection\n              title="Late Orders"\n              subtitle="These orders are past their delivery date."\n              orders={lateOrders}\n              emptyText="No late orders."\n              late\n              onEdit={setEditing}\n              onStatusChange={updateStatus}\n              onDelete={deleteOrder}\n            />
             <OrderSection
               title="Today's Orders"
               subtitle="These orders need your attention today."
@@ -434,13 +434,13 @@ function StatCard({
   value: number;
   description: string;
   icon: React.ReactNode;
-  accent: "blue" | "violet" | "orange" | "green";
+  accent: "blue" | "violet" | "orange" | "green" | "red";
 }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600",
     violet: "bg-violet-50 text-violet-600",
     orange: "bg-orange-50 text-orange-600",
-    green: "bg-green-50 text-green-600",
+    green: "bg-green-50 text-green-600",\n    red: "bg-red-50 text-red-600",
   };
 
   return (
@@ -556,7 +556,7 @@ function OrderItem({
           </span>
         </div>
 
-        <div className="text-sm text-slate-500 mt-2 line-clamp-2">
+        <div className="flex flex-wrap items-center gap-2 mt-2">\n          <span className=`text-xs font-black px-2.5 py-1 rounded-full ${deliveryLabel.startsWith("LATE") ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"}`>\n            {deliveryLabel}\n          </span>\n          <span className="text-xs font-bold text-slate-400">{order.delivery_date}</span>\n        </div>\n\n        <div className="text-sm text-slate-500 mt-2 line-clamp-2">
           {order.product_description}
         </div>
 
