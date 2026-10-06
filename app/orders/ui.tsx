@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
-import type { Order, OrderStatus } from "@/lib/types";
+import type { Order, OrderStatus } from "@/lib/types";\nimport { localDateString, getDeliveryLabel } from "@/lib/date";
 import AppSidebar from "@/app/components/AppSidebar";
 import {
   Plus,
@@ -45,7 +45,7 @@ export default function OrdersPageClient({
 
       if (q && !text.includes(q.toLowerCase())) return false;
 
-      if (filter !== "All" && o.status !== filter) return false;
+      if (filter === "Late") {\n        if (o.status === "Delivered" || o.delivery_date >= today) return false;\n      } else if (filter !== "All" && o.status !== filter) {\n        return false;\n      }
 
       return true;
     });
@@ -234,7 +234,7 @@ export default function OrdersPageClient({
                 {filtered.map((order) => (
                   <div
                     key={order.id}
-                    className="p-5 sm:p-6 flex flex-col xl:flex-row xl:items-center gap-4"
+                    className=`p-5 sm:p-6 flex flex-col xl:flex-row xl:items-center gap-4 ${order.status !== "Delivered" && order.delivery_date < today ? "bg-red-50/70 border-l-4 border-red-500" : ""}`
                   >
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap gap-2 items-center">
