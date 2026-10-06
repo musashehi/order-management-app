@@ -5,8 +5,14 @@ import Dashboard from "./ui";
 
 export default async function DashboardPage() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect("/login");
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect("/login");
+  }
 
   const { data: orders } = await supabase
     .from("orders")
@@ -21,13 +27,15 @@ export default async function DashboardPage() {
 
   const today = localDateString();
   const tomorrow = addDaysString(today, 1);
-  const orderMap = new Map((orders ?? []).map((order) => [order.id, order]));
 
-  // Reminder notifications are only valid while the referenced order is
-  // actually due tomorrow. This prevents old "Tomorrow..." notifications
-  // from remaining visible after the delivery date has passed.
+  const orderMap = new Map(
+    (orders ?? []).map((order) => [order.id, order])
+  );
+
   const validNotifications = (notifications ?? []).filter((notification) => {
-    if (notification.title !== "🔔 Order Reminder") return true;
+    if (notification.title !== "🔔 Order Reminder") {
+      return true;
+    }
 
     const order = notification.order_id
       ? orderMap.get(notification.order_id)
@@ -35,8 +43,8 @@ export default async function DashboardPage() {
 
     return Boolean(
       order &&
-      order.status !== "Delivered" &&
-      order.delivery_date === tomorrow
+        order.status !== "Delivered" &&
+        order.delivery_date === tomorrow
     );
   });
 

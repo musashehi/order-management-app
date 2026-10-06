@@ -20,9 +20,7 @@ export async function GET(req: NextRequest) {
   const tomorrow = addDaysString(today, 1);
   const now = new Date().toISOString();
 
-  // Clean up unread reminder notifications that are no longer valid.
-  // A reminder says "Tomorrow", so it should only remain active while the
-  // referenced order is actually due tomorrow.
+
   const { data: oldReminders, error: oldRemindersError } = await db
     .from("notifications")
     .select("id, order_id")
@@ -81,7 +79,7 @@ export async function GET(req: NextRequest) {
     }
   }
 
-  // Create reminders only for orders that are actually due tomorrow.
+
   const { data: orders, error } = await db
     .from("orders")
     .select("*")

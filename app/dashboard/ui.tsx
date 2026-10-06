@@ -2,7 +2,11 @@
 
 import { useState } from "react";
 import { createClient } from "@/lib/supabase-browser";
-import { localDateString, addDaysString, getDeliveryLabel } from "@/lib/date";
+import {
+  localDateString,
+  addDaysString,
+  getDeliveryLabel,
+} from "@/lib/date";
 import type { Order, Notification, OrderStatus } from "@/lib/types";
 import {
   Plus,
@@ -38,8 +42,9 @@ export default function Dashboard({
   initialNotifications: Notification[];
 }) {
   const [orders, setOrders] = useState(initialOrders);
-  const [notifications, setNotifications] =
-    useState(initialNotifications);
+  const [notifications, setNotifications] = useState(
+    initialNotifications
+  );
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState<Order | null>(null);
   const [toast, setToast] = useState("");
@@ -64,6 +69,12 @@ export default function Dashboard({
   const upcomingOrders = orders.filter(
     (o) =>
       o.delivery_date > tomorrow &&
+      o.status !== "Delivered"
+  );
+
+  const lateOrders = orders.filter(
+    (o) =>
+      o.delivery_date < today &&
       o.status !== "Delivered"
   );
 
@@ -127,7 +138,9 @@ export default function Dashboard({
             o.id === editing.id ? result.data : o
           )
         : [...prev, result.data].sort((a, b) =>
-            a.delivery_date.localeCompare(b.delivery_date)
+            a.delivery_date.localeCompare(
+              b.delivery_date
+            )
           )
     );
 
@@ -141,8 +154,9 @@ export default function Dashboard({
       !confirm(
         "Are you sure you want to delete this order?"
       )
-    )
+    ) {
       return;
+    }
 
     const { error } = await supabase
       .from("orders")
@@ -267,6 +281,14 @@ export default function Dashboard({
             />
 
             <StatCard
+              title="Late"
+              value={lateOrders.length}
+              description="Orders past their delivery date"
+              icon={<Clock3 size={20} />}
+              accent="red"
+            />
+
+            <StatCard
               title="Completed"
               value={completedOrders.length}
               description="Delivered orders"
@@ -275,7 +297,18 @@ export default function Dashboard({
             />
           </section>
 
-          <section className="grid xl:grid-cols-2 gap-6">\n            <OrderSection\n              title="Late Orders"\n              subtitle="These orders are past their delivery date."\n              orders={lateOrders}\n              emptyText="No late orders."\n              late\n              onEdit={setEditing}\n              onStatusChange={updateStatus}\n              onDelete={deleteOrder}\n            />
+          <section className="grid xl:grid-cols-2 gap-6">
+            <OrderSection
+              title="Late Orders"
+              subtitle="These orders are past their delivery date."
+              orders={lateOrders}
+              emptyText="No late orders."
+              late
+              onEdit={setEditing}
+              onStatusChange={updateStatus}
+              onDelete={deleteOrder}
+            />
+
             <OrderSection
               title="Today's Orders"
               subtitle="These orders need your attention today."
@@ -434,13 +467,19 @@ function StatCard({
   value: number;
   description: string;
   icon: React.ReactNode;
-  accent: "blue" | "violet" | "orange" | "green" | "red";
+  accent:
+    | "blue"
+    | "violet"
+    | "orange"
+    | "green"
+    | "red";
 }) {
   const colors = {
     blue: "bg-blue-50 text-blue-600",
     violet: "bg-violet-50 text-violet-600",
     orange: "bg-orange-50 text-orange-600",
-    green: "bg-green-50 text-green-600",\n    red: "bg-red-50 text-red-600",
+    green: "bg-green-50 text-green-600",
+    red: "bg-red-50 text-red-600",
   };
 
   return (
@@ -471,6 +510,7 @@ function OrderSection({
   subtitle,
   orders,
   emptyText,
+  late = false,
   onEdit,
   onStatusChange,
   onDelete,
@@ -479,6 +519,7 @@ function OrderSection({
   subtitle: string;
   orders: Order[];
   emptyText: string;
+  late?: boolean;
   onEdit: (order: Order) => void;
   onStatusChange: (
     order: Order,
@@ -487,9 +528,25 @@ function OrderSection({
   onDelete: (id: string) => void;
 }) {
   return (
-    <section className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-      <div className="px-5 sm:px-6 py-5 border-b border-slate-100">
-        <h2 className="font-black text-lg">
+    <section
+      className={`bg-white border rounded-2xl overflow-hidden ${
+        late
+          ? "border-red-200"
+          : "border-slate-200"
+      }`}
+    >
+      <div
+        className={`px-5 sm:px-6 py-5 border-b ${
+          late
+            ? "border-red-100 bg-red-50/50"
+            : "border-slate-100"
+        }`}
+      >
+        <h2
+          className={`font-black text-lg ${
+            late ? "text-red-700" : "text-slate-900"
+          }`}
+        >
           {title}
         </h2>
 
@@ -540,9 +597,20 @@ function OrderItem({
   onDelete: (id: string) => void;
 }) {
   const nextAction = getNextStatusAction(order.status);
+  const deliveryLabel = getDeliveryLabel(
+    order.delivery_date
+  );
+
+  const isLate =
+    order.status !== "Delivered" &&
+    order.delivery_date < localDateString();
 
   return (
-    <div className="p-5 flex flex-col gap-4">
+    <div
+      className={`p-5 flex flex-col gap-4 ${
+        isLate ? "bg-red-50/40" : ""
+      }`}
+    >
       <div className="flex-1 min-w-0">
         <div className="flex flex-wrap items-center gap-2">
           <h3 className="font-black text-slate-900">
@@ -556,7 +624,23 @@ function OrderItem({
           </span>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 mt-2">\n          <span className=`text-xs font-black px-2.5 py-1 rounded-full ${deliveryLabel.startsWith("LATE") ? "bg-red-100 text-red-700" : "bg-slate-100 text-slate-600"}`>\n            {deliveryLabel}\n          </span>\n          <span className="text-xs font-bold text-slate-400">{order.delivery_date}</span>\n        </div>\n\n        <div className="text-sm text-slate-500 mt-2 line-clamp-2">
+        <div className="flex flex-wrap items-center gap-2 mt-2">
+          <span
+            className={`text-xs font-black px-2.5 py-1 rounded-full ${
+              isLate
+                ? "bg-red-100 text-red-700"
+                : "bg-slate-100 text-slate-600"
+            }`}
+          >
+            {deliveryLabel}
+          </span>
+
+          <span className="text-xs font-bold text-slate-400">
+            {order.delivery_date}
+          </span>
+        </div>
+
+        <div className="text-sm text-slate-500 mt-2 line-clamp-2">
           {order.product_description}
         </div>
 
@@ -595,9 +679,7 @@ function OrderItem({
 
         <button
           className="w-10 h-10 rounded-xl bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center"
-          onClick={() =>
-            onDelete(order.id)
-          }
+          onClick={() => onDelete(order.id)}
           title="Delete order"
         >
           <Trash2 size={15} />
@@ -647,16 +729,19 @@ function OrderModal({
   onClose: () => void;
   onSave: (data: Partial<Order>) => void;
 }) {
-  const [form, setForm] =
-    useState<Partial<Order>>(
-      order || { status: "Pending" }
-    );
+  const [form, setForm] = useState<Partial<Order>>(
+    order || { status: "Pending" }
+  );
 
-  const set = (key: keyof Order, value: any) =>
+  const set = (
+    key: keyof Order,
+    value: any
+  ) => {
     setForm((previous) => ({
       ...previous,
       [key]: value,
     }));
+  };
 
   return (
     <div className="fixed inset-0 z-[60] bg-slate-950/50 backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
@@ -686,9 +771,7 @@ function OrderModal({
           <Field label="Customer Name">
             <input
               className="input"
-              value={
-                form.customer_name || ""
-              }
+              value={form.customer_name || ""}
               placeholder="e.g. Ardit Hoxha"
               onChange={(e) =>
                 set(
@@ -702,9 +785,7 @@ function OrderModal({
           <Field label="Phone Number">
             <input
               className="input"
-              value={
-                form.customer_phone || ""
-              }
+              value={form.customer_phone || ""}
               placeholder="e.g. 0691234567"
               onChange={(e) =>
                 set(
@@ -719,8 +800,7 @@ function OrderModal({
             <textarea
               className="input min-h-28"
               value={
-                form.product_description ||
-                ""
+                form.product_description || ""
               }
               placeholder="Describe the customer order"
               onChange={(e) =>
@@ -736,9 +816,7 @@ function OrderModal({
             <input
               className="input"
               type="date"
-              value={
-                form.delivery_date || ""
-              }
+              value={form.delivery_date || ""}
               onChange={(e) =>
                 set(
                   "delivery_date",
@@ -752,9 +830,7 @@ function OrderModal({
             <Field label="Status">
               <select
                 className="input"
-                value={
-                  form.status || "Pending"
-                }
+                value={form.status || "Pending"}
                 onChange={(e) =>
                   set(
                     "status",
